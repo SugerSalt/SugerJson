@@ -646,7 +646,9 @@ JsonIterator JsonValue::erase(JsonConstIterator pos) {
 }
 
 bool JsonValue::erase(const std::string &key) {
-  return removeMember(key);
+  if (!isObject()) throw type_error("erase(std::string) can only be used by object type");
+  auto &data = *static_cast<JsonObject *>(data_.get());
+  return data.erase(key) != 0;
 }
 
 bool JsonValue::isMember(const std::string &key) const {
@@ -656,7 +658,7 @@ bool JsonValue::isMember(const std::string &key) const {
 }
 
 bool JsonValue::removeMember(const std::string &key) {
-  if (!isObject()) throw type_error("isMember(std::string) can only be used by object type");
+  if (!isObject()) throw type_error("removeMember(std::string) can only be used by object type");
   auto &data = *static_cast<JsonObject *>(data_.get());
   return data.erase(key) != 0;
 }

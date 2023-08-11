@@ -18,7 +18,7 @@ class JsonValue {
 
 public:
   JsonValue();
-  JsonValue(JsonType type);
+  explicit JsonValue(JsonType type);
   JsonValue(bool value);
   JsonValue(int value);
   JsonValue(int64_t value);
