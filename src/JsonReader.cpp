@@ -172,11 +172,22 @@ bool JsonReader::readValue(JsonValue &json) {
 
 bool JsonReader::readObject(JsonValue &json) {
   json = JsonValue(JsonType::Object);
-  while (true) {
+  bool not_first = false;
+  ++pos_;
+  ++col_pos_;
+  while (getNextToken() != ObjectEnd){
+    if (not_first){
+      if (token_ != ArraySeparator) {
+        throwParseError("Syntax error: missing ',' or '}' in object declaration");
+      } else {
+        ++pos_;
+        ++col_pos_;
+        getNextToken();
+      }
+    }
+    not_first = true;
     // name
-    ++pos_;
-    ++col_pos_;
-    if (getNextToken() != String) {
+    if (token_ != String) {
       throwParseError("Syntax error: key should be a string.");
     }
     auto name = getString();
@@ -192,12 +203,6 @@ bool JsonReader::readObject(JsonValue &json) {
     JsonValue member;
     readValue(member);
     json.push_back(name, std::move(member));
-    getNextToken();
-    if (token_ == ObjectEnd) {
-      break;
-    } else if (token_ != ArraySeparator) {
-      throwParseError("Syntax error: missing ',' or '}' in object declaration");
-    }
   }
   ++pos_;
   ++col_pos_;
@@ -206,18 +211,23 @@ bool JsonReader::readObject(JsonValue &json) {
 
 bool JsonReader::readArray(JsonValue &json) {
   json = JsonValue(JsonType::Array);
-  while (true) {
-    ++pos_;
-    ++col_pos_;
+  bool not_first = false;
+  ++pos_;
+  ++col_pos_;
+  while (getNextToken() != ArrayEnd){
+    if (not_first){
+      if (token_ != ArraySeparator) {
+        throwParseError("Syntax error: missing ',' or ']' in array declaration");
+      } else {
+        ++pos_;
+        ++col_pos_;
+        getNextToken();
+      }
+    }
+    not_first = true;
     JsonValue member;
     readValue(member);
     json.push_back(std::move(member));
-    getNextToken();
-    if (token_ == ArrayEnd) {
-      break;
-    } else if (token_ != ArraySeparator) {
-      throwParseError("Syntax error: missing ',' or ']' in array declaration");
-    }
   }
   ++pos_;
   ++col_pos_;
