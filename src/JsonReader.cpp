@@ -66,7 +66,7 @@ JsonReader::TokenType JsonReader::getNextToken() {
       token_ = String;
       break;
     case ',':
-      token_ = ArraySeparator;
+      token_ = Separator;
       break;
     case ':':
       token_ = MemberSeparator;
@@ -177,7 +177,7 @@ bool JsonReader::readObject(JsonValue &json) {
   ++col_pos_;
   while (getNextToken() != ObjectEnd){
     if (not_first){
-      if (token_ != ArraySeparator) {
+      if (token_ != Separator) {
         throwParseError("Syntax error: missing ',' or '}' in object declaration");
       } else {
         ++pos_;
@@ -216,7 +216,7 @@ bool JsonReader::readArray(JsonValue &json) {
   ++col_pos_;
   while (getNextToken() != ArrayEnd){
     if (not_first){
-      if (token_ != ArraySeparator) {
+      if (token_ != Separator) {
         throwParseError("Syntax error: missing ',' or ']' in array declaration");
       } else {
         ++pos_;

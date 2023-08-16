@@ -16,7 +16,7 @@ public:
   using UniquePtr = std::unique_ptr<JsonBase>;
 
   explicit JsonBase(JsonType type) : type_(type) {};
-  ~JsonBase() = default;
+  virtual ~JsonBase() = default;
 
   virtual std::string toString() const = 0;
   virtual std::ostream &toDumpStream(std::ostream &out) const = 0;

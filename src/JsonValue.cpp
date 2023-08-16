@@ -26,7 +26,7 @@ JsonValue::JsonValue(JsonType type) : type_(type) {
       data_ = std::unique_ptr<JsonNumber>(new JsonNumber(0));
       break;
     case JsonType::Long:
-      data_ = std::unique_ptr<JsonNumber>(new JsonNumber(0L));
+      data_ = std::unique_ptr<JsonNumber>(new JsonNumber(static_cast<int64_t>(0)));
       break;
     case JsonType::Double:
       data_ = std::unique_ptr<JsonNumber>(new JsonNumber(0.0));
@@ -157,7 +157,7 @@ JsonValue::JsonValue(JsonType type) : type_(type) {
       data_ = std::make_unique<JsonNumber>(0);
       break;
     case JsonType::Long:
-      data_ = std::make_unique<JsonNumber>(0L);
+      data_ = std::make_unique<JsonNumber>(static_cast<int64_t>(0));
       break;
     case JsonType::Double:
       data_ = std::make_unique<JsonNumber>(0.0);
@@ -442,8 +442,20 @@ JsonValue &JsonValue::operator[](std::size_t index) {
   return data[index];
 }
 
+JsonValue &JsonValue::operator[](int index) {
+  if (!isArray()) throw type_error("operator[](int) can only be used by array type");
+  auto &data = *static_cast<JsonArray *>(data_.get());
+  return data[index];
+}
+
 const JsonValue &JsonValue::operator[](std::size_t index) const {
   if (!isArray()) throw type_error("operator[](std::size_t) can only be used by array type");
+  const auto &data = *static_cast<JsonArray *>(data_.get());
+  return data[index];
+}
+
+const JsonValue &JsonValue::operator[](int index) const {
+  if (!isArray()) throw type_error("operator[](int) can only be used by array type");
   const auto &data = *static_cast<JsonArray *>(data_.get());
   return data[index];
 }

@@ -31,9 +31,9 @@ private:
     True,         // true
     False,        // false
     Null,         // null
-    ArraySeparator,   // ,
+    Separator,    // ,
     MemberSeparator,  // :
-    Comment,          // //
+    Comment,          // /
     Error
   };
   TokenType token_;

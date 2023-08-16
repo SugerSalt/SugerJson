@@ -27,7 +27,7 @@ endif()
 
 # 设置项目
 project(SugerJson
-    VERSION 1.0.0
+    VERSION 1.0.1
     LANGUAGES CXX)
 message(STATUS "SugerJson Version: ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 set(PROJECT_SOVERSION 1)

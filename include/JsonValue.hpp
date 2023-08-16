@@ -74,7 +74,9 @@ public:
   const JsonValue &operator[](const std::string &key) const;
   const JsonValue &operator[](const char *key) const;
   JsonValue &operator[](std::size_t index);
+  JsonValue &operator[](int index);
   const JsonValue &operator[](std::size_t index) const;
+  const JsonValue &operator[](int index) const;
 
   std::size_t size() const;
   bool empty() const;

@@ -9,7 +9,7 @@ type_error::type_error(const std::string& msg) : std::runtime_error(msg){
 
 type_error::type_error(JsonType src, JsonType dst)
   : std::runtime_error(
-  "Type \"" + getTypeName(src) + R"(" can not 'as' to ")" + getTypeName(dst) + "\"") {
+  "Source type is \"" + getTypeName(src) + R"(", but expect ")" + getTypeName(dst) + "\"") {
 }
 
 const std::string &type_error::getTypeName(JsonType type) {
