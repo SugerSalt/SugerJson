@@ -177,8 +177,14 @@ json.push_back("newIntValue", 456);  // Object类型，插入键值
 jsonArray.push_back(4);  // Array类型，在末尾插入值
 
 // 迭代器插入
+// Array
 auto it = jsonArray.at(1);
-jsonArray.insert(it, 5);  // Array类型，在指定迭代器位置前插入值
+jsonArray.insert(it, 5);  // Array类型，在指定迭代器位置前插入值，返回插入元素的迭代器
+// object
+auto it = json.find("intValue");
+std::pair<JsonIterator, bool> res = json.insert(it, "intValue2", 123);  // Object类型，在指定迭代器位置前插入值
+// 对于返回值res，res.second为是否插入成功，如果成功res.first为插入元素的迭代器
+// 如果键已存在则插入失败，res.first为原该键位置的迭代器
 
 // 删除
 json.erase("intValue");  // Object类型，删除指定键，返回是否成功

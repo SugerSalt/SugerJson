@@ -4,21 +4,22 @@
 #define SUGERJSON_JSONOBJECT_HPP
 
 #include <unordered_map>
-#include "../JsonBase.hpp"
-#include "../JsonValue.hpp"
+#include <list>
+#include "JsonBase.hpp"
+#include "JsonValue.hpp"
 
 namespace suger {
 namespace detail {
 
-class JsonObject : public JsonBase{
+class JsonObject : public JsonBase {
 public:
-  using ObjectList = std::unordered_map<std::string, JsonValue>;
-  
+  using MemberType = std::pair<std::string, JsonValue>;
+  using ObjectList = std::list<MemberType>;
+  using ObjectMap = std::unordered_map<std::string, const ObjectList::iterator>;
+
   JsonObject();
 
   const ObjectList &getValue() const;
-  ObjectList &getRef();
-  void setValue(const ObjectList &x);
 
   std::size_t size() const;
   bool empty() const;
@@ -31,8 +32,12 @@ public:
   void clear();
   bool insert(const std::string &key, const JsonValue &value);
   bool insert(const std::string &key, JsonValue &&value);
+  std::pair<ObjectList::iterator, bool> insert(
+    ObjectList::const_iterator pos, const std::string &key, const JsonValue &value);
+  std::pair<ObjectList::iterator, bool> insert(
+    ObjectList::const_iterator pos, const std::string &key, JsonValue &&value);
   ObjectList::iterator erase(ObjectList::const_iterator pos);
-  std::size_t erase(const std::string &key);
+  bool erase(const std::string &key);
 
   JsonValue &operator[](const std::string &key);
   const JsonValue &operator[](const std::string &key) const;
@@ -45,6 +50,7 @@ public:
   std::ostream &toDumpStream(std::ostream &out) const override;
 private:
   ObjectList data_;
+  ObjectMap map_;
 };
 
 } // suger

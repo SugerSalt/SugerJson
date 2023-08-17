@@ -632,7 +632,7 @@ void JsonValue::push_back(JsonValue &&value) {
 JsonIterator JsonValue::insert(JsonConstIterator pos, const JsonValue &value) {
   if (!isArray())
     throw type_error("insert(JsonConstIterator,JsonValue) can only be used by array type");
-  if (pos.type_ != type_) throw type_error("Insert type mismatch");
+  if (pos.type_ != type_) throw type_error("Iterator type mismatch");
   auto &data = *static_cast<JsonArray *>(data_.get());
   return JsonIterator(data.insert(pos.array_iter_, value));
 }
@@ -640,13 +640,37 @@ JsonIterator JsonValue::insert(JsonConstIterator pos, const JsonValue &value) {
 JsonIterator JsonValue::insert(JsonConstIterator pos, JsonValue &&value) {
   if (!isArray())
     throw type_error("insert(JsonConstIterator,JsonValue) can only be used by array type");
-  if (pos.type_ != type_) throw type_error("Insert type mismatch");
+  if (pos.type_ != type_) throw type_error("Iterator type mismatch");
   auto &data = *static_cast<JsonArray *>(data_.get());
   return JsonIterator(data.insert(pos.array_iter_, std::move(value)));
 }
 
+std::pair<JsonIterator, bool> JsonValue::insert(
+  JsonConstIterator pos, const std::string &key, const JsonValue &value) {
+  if (!isObject()) {
+    throw type_error(
+      "insert(JsonConstIterator,std::string,JsonValue) can only be used by object type");
+  }
+  if (pos.type_ != type_) throw type_error("Iterator type mismatch");
+  auto &data = *static_cast<JsonObject *>(data_.get());
+  auto &&res = data.insert(pos.object_iter_, key, value);
+  return {JsonIterator(res.first), res.second};
+}
+
+std::pair<JsonIterator, bool> JsonValue::insert(
+  JsonConstIterator pos, const std::string &key, JsonValue &&value) {
+  if (!isObject()) {
+    throw type_error(
+      "insert(JsonConstIterator,std::string,JsonValue) can only be used by object type");
+  }
+  if (pos.type_ != type_) throw type_error("Iterator type mismatch");
+  auto &data = *static_cast<JsonObject *>(data_.get());
+  auto &&res = data.insert(pos.object_iter_, key, std::move(value));
+  return {JsonIterator(res.first), res.second};
+}
+
 JsonIterator JsonValue::erase(JsonConstIterator pos) {
-  if (pos.type_ != type_) throw type_error("Erase type mismatch");
+  if (pos.type_ != type_) throw type_error("Iterator type mismatch");
   if (isArray()) {
     auto &data = *static_cast<JsonArray *>(data_.get());
     return JsonIterator(data.erase(pos.array_iter_));

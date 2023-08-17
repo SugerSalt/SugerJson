@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <list>
 #include "JsonBase.hpp"
 
 namespace suger {
@@ -98,6 +99,8 @@ public:
   void push_back(JsonValue &&value);
   JsonIterator insert(JsonConstIterator pos, const JsonValue &value);
   JsonIterator insert(JsonConstIterator pos, JsonValue &&value);
+  std::pair<JsonIterator, bool> insert(JsonConstIterator pos, const std::string &key, const JsonValue &value);
+  std::pair<JsonIterator, bool> insert(JsonConstIterator pos, const std::string &key, JsonValue &&value);
   JsonIterator erase(JsonConstIterator pos);
   bool erase(const std::string &key);
   bool removeMember(const std::string &key);
@@ -113,15 +116,14 @@ private:
   void setToArray();
 };
 
+using ArrayIterator = std::vector<JsonValue>::iterator;
+using ObjectIterator = std::list<std::pair<std::string, JsonValue>>::iterator;
+
 class JsonIterator : public std::iterator<std::forward_iterator_tag, JsonValue> {
   friend class JsonValue;
   friend class JsonConstIterator;
 
 public:
-  explicit JsonIterator(JsonType type);
-  explicit JsonIterator(JsonValue &value);
-  explicit JsonIterator(const std::vector<JsonValue>::iterator &value);
-  explicit JsonIterator(const std::unordered_map<std::string, JsonValue>::iterator &value);
   JsonIterator(const JsonIterator &other);
   JsonIterator(JsonIterator &&other) noexcept;
   JsonIterator &operator=(const JsonIterator &other);
@@ -138,21 +140,24 @@ public:
   JsonValue &value() const;
 
 private:
+  explicit JsonIterator(JsonType type);
+  explicit JsonIterator(JsonValue &value);
+  explicit JsonIterator(const ArrayIterator &value);
+  explicit JsonIterator(const ObjectIterator &value);
+
   JsonType type_;
   JsonValue *value_;
-  std::vector<JsonValue>::iterator array_iter_;
-  std::unordered_map<std::string, JsonValue>::iterator object_iter_;
+  ArrayIterator array_iter_;
+  ObjectIterator object_iter_;
 };
+
+using ArrayConstIterator = std::vector<JsonValue>::const_iterator;
+using ObjectConstIterator = std::list<std::pair<std::string, JsonValue>>::const_iterator;
 
 class JsonConstIterator : public std::iterator<std::forward_iterator_tag, JsonValue> {
   friend class JsonValue;
 
 public:
-  explicit JsonConstIterator(JsonType type);
-  explicit JsonConstIterator(const JsonValue &value);
-  explicit JsonConstIterator(const std::vector<JsonValue>::const_iterator &value);
-  explicit JsonConstIterator(
-    const std::unordered_map<std::string, JsonValue>::const_iterator &value);
   JsonConstIterator(const JsonConstIterator &other);
   JsonConstIterator(const JsonIterator &other);
   JsonConstIterator(JsonConstIterator &&other) noexcept;
@@ -171,10 +176,15 @@ public:
   const JsonValue &value() const;
 
 private:
+  explicit JsonConstIterator(JsonType type);
+  explicit JsonConstIterator(const JsonValue &value);
+  explicit JsonConstIterator(const ArrayConstIterator &value);
+  explicit JsonConstIterator(const ObjectConstIterator &value);
+
   JsonType type_;
   const JsonValue *value_;
-  std::vector<JsonValue>::const_iterator array_iter_;
-  std::unordered_map<std::string, JsonValue>::const_iterator object_iter_;
+  ArrayConstIterator array_iter_;
+  ObjectConstIterator object_iter_;
 };
 
 } // suger

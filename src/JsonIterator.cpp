@@ -16,7 +16,7 @@ JsonIterator::JsonIterator(const std::vector<JsonValue>::iterator &value)
 
 }
 
-JsonIterator::JsonIterator(const std::unordered_map<std::string, JsonValue>::iterator &value)
+JsonIterator::JsonIterator(const ObjectIterator &value)
   : type_(JsonType::Object), value_(nullptr), object_iter_(value) {
 
 }
@@ -133,8 +133,7 @@ JsonConstIterator::JsonConstIterator(const std::vector<JsonValue>::const_iterato
 
 }
 
-JsonConstIterator::JsonConstIterator(
-  const std::unordered_map<std::string, JsonValue>::const_iterator &value)
+JsonConstIterator::JsonConstIterator(const ObjectConstIterator &value)
   : type_(JsonType::Object), value_(nullptr), object_iter_(value) {
 
 }

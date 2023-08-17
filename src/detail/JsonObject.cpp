@@ -7,20 +7,12 @@
 
 namespace suger {
 namespace detail {
-JsonObject::JsonObject() : JsonBase(JsonType::Object), data_() {
+JsonObject::JsonObject() : JsonBase(JsonType::Object) {
 
 }
 
 const JsonObject::ObjectList &JsonObject::getValue() const {
   return data_;
-}
-
-JsonObject::ObjectList &JsonObject::getRef() {
-  return data_;
-}
-
-void JsonObject::setValue(const JsonObject::ObjectList &x) {
-  data_ = x;
 }
 
 std::size_t JsonObject::size() const {
@@ -49,46 +41,105 @@ JsonObject::ObjectList::const_iterator JsonObject::end() const {
 
 void JsonObject::clear() {
   data_.clear();
+  map_.clear();
 }
 
 bool JsonObject::insert(const std::string &key, const JsonValue &value) {
-  return data_.emplace(key, value).second;
+  if (map_.count(key)) {
+    return false;
+  }
+  data_.emplace_back(key, value);
+  auto it = std::prev(data_.end());
+  map_.emplace(key, it);
+  return true;
 }
 
 bool JsonObject::insert(const std::string &key, JsonValue &&value) {
-  return data_.emplace(key, std::move(value)).second;
+  if (map_.count(key)) {
+    return false;
+  }
+  data_.emplace_back(key, std::move(value));
+  auto it = std::prev(data_.end());
+  map_.emplace(key, it);
+  return true;
+}
+
+std::pair<JsonObject::ObjectList::iterator, bool> JsonObject::insert(
+  JsonObject::ObjectList::const_iterator pos,
+  const std::string &key, const JsonValue &value) {
+  auto it_map = map_.find(key);
+  if (it_map != map_.end()) {
+    return {it_map->second, false};
+  }
+  auto it = data_.emplace(pos, key, value);
+  map_.emplace(key, it);
+  return {it, true};
+}
+
+std::pair<JsonObject::ObjectList::iterator, bool> JsonObject::insert(
+  JsonObject::ObjectList::const_iterator pos,
+  const std::string &key, JsonValue &&value) {
+  auto it_map = map_.find(key);
+  if (it_map != map_.end()) {
+    return {it_map->second, false};
+  }
+  auto it = data_.emplace(pos, key, std::move(value));
+  map_.emplace(key, it);
+  return {it, true};
 }
 
 JsonObject::ObjectList::iterator JsonObject::erase(JsonObject::ObjectList::const_iterator pos) {
+  auto it = map_.find(pos->first);
+  map_.erase(it);
   return data_.erase(pos);
 }
 
-std::size_t JsonObject::erase(const std::string &key) {
-  return data_.erase(key);
+bool JsonObject::erase(const std::string &key) {
+  auto it = map_.find(key);
+  if (it == map_.end()) {
+    return false;
+  }
+  data_.erase(it->second);
+  map_.erase(it);
+  return true;
 }
 
 JsonValue &JsonObject::operator[](const std::string &key) {
-  return data_[key];
+  auto it = map_.find(key);
+  if (it == map_.end()) {
+    data_.emplace_back(key, JsonValue());
+    it = map_.emplace(key, std::prev(data_.end())).first;
+  }
+  return it->second->second;
 }
 
 const JsonValue &JsonObject::operator[](const std::string &key) const {
-  auto it = data_.find(key);
-  if (it == data_.end()) {
+  auto it = map_.find(key);
+  if (it == map_.end()) {
     throw key_error(key);
   }
-  return it->second;
+  return it->second->second;
 }
 
 void JsonObject::swap(JsonObject &other) {
   data_.swap(other.data_);
+  map_.swap(other.map_);
 }
 
 JsonObject::ObjectList::iterator JsonObject::find(const std::string &key) {
-  return data_.find(key);
+  auto it = map_.find(key);
+  if (it == map_.end()) {
+    return data_.end();
+  }
+  return it->second;
 }
 
 JsonObject::ObjectList::const_iterator JsonObject::find(const std::string &key) const {
-  return data_.find(key);
+  auto it = map_.find(key);
+  if (it == map_.end()) {
+    return data_.end();
+  }
+  return it->second;
 }
 
 std::string JsonObject::toString() const {
