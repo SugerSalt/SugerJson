@@ -73,6 +73,8 @@ JsonReader::TokenType JsonReader::getNextToken() {
       break;
     case '/':
       token_ = Comment;
+      ignoreComment();
+      getNextToken();
       break;
     case 't':
       if (strMatch("true", 4)) {
@@ -141,6 +143,56 @@ void JsonReader::ignoreBlank() {
   }
 }
 
+void JsonReader::ignoreComment() {
+  ++pos_;
+  ++col_pos_;
+  if (*pos_ == '/') {  // 单行注释
+    while (pos_ != end_ && *pos_ != '\n') {
+      ++pos_;
+      ++col_pos_;
+    }
+    if (*pos_ == '\n') {
+      ++pos_;
+      ++row_pos_;
+      col_pos_ = 0;
+    }
+  } else if (*pos_ == '*') {  // 块注释
+    auto col_s = col_pos_;
+    auto row_s = row_pos_;
+    ++pos_;
+    ++col_pos_;
+    bool get_star = false;
+    while (pos_ != end_) {
+      char ch = *pos_;
+      if (ch == '*') {
+        get_star = true;
+        ++pos_;
+        ++col_pos_;
+      } else if (get_star && ch == '/') {
+        break;
+      } else if (ch == '\n') {
+        get_star = false;
+        ++pos_;
+        ++row_pos_;
+        col_pos_ = 0;
+      } else {
+        get_star = false;
+        ++pos_;
+        ++col_pos_;
+      }
+    }
+    if (pos_==end_){
+      col_pos_ = col_s;
+      row_pos_ = row_s;
+      throwParseError("Syntax error: Incomplete block comment.");
+    }
+    ++pos_;
+    ++col_pos_;
+  } else {
+    throwParseError("Syntax error: Comment should begin with // or /*.");
+  }
+}
+
 //
 bool JsonReader::readValue(JsonValue &json) {
   getNextToken();
@@ -175,8 +227,8 @@ bool JsonReader::readObject(JsonValue &json) {
   bool not_first = false;
   ++pos_;
   ++col_pos_;
-  while (getNextToken() != ObjectEnd){
-    if (not_first){
+  while (getNextToken() != ObjectEnd) {
+    if (not_first) {
       if (token_ != Separator) {
         throwParseError("Syntax error: missing ',' or '}' in object declaration");
       } else {
@@ -214,8 +266,8 @@ bool JsonReader::readArray(JsonValue &json) {
   bool not_first = false;
   ++pos_;
   ++col_pos_;
-  while (getNextToken() != ArrayEnd){
-    if (not_first){
+  while (getNextToken() != ArrayEnd) {
+    if (not_first) {
       if (token_ != Separator) {
         throwParseError("Syntax error: missing ',' or ']' in array declaration");
       } else {
@@ -297,7 +349,7 @@ bool JsonReader::readNumber(JsonValue &json) {
   if (negative) {
     double_result = -double_result;
   }
-  if (is_int && long_result<INT32_MAX && long_result>INT32_MIN) {
+  if (is_int && long_result < INT32_MAX && long_result > INT32_MIN) {
     json = static_cast<int>(long_result);
   } else if (is_int) {
     json = long_result;
@@ -374,7 +426,7 @@ std::string JsonReader::getString() {
   return str;
 }
 
-std::istream &operator>>(std::istream &in, JsonValue &json){
+std::istream &operator>>(std::istream &in, JsonValue &json) {
   JsonReader().parse(in, json);
   return in;
 }

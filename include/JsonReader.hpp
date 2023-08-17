@@ -46,6 +46,7 @@ private:
 
   TokenType getNextToken();
   void ignoreBlank();
+  void ignoreComment();
   bool readValue(JsonValue &json);
   bool readObject(JsonValue &json);
   bool readArray(JsonValue &json);
