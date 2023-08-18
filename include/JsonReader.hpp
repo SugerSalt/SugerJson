@@ -14,10 +14,12 @@ public:
 
   JsonValue parse(const std::string &document);
   JsonValue parse(std::istream &in);
-  bool parse(const std::string &document, JsonValue &json);
-  bool parse(std::istream &in, JsonValue &json);
+  bool parse(const std::string &document, JsonValue &json) noexcept;
+  bool parse(std::istream &in, JsonValue &json) noexcept;
 
-
+  bool good() const;
+  const std::string &getErrorString() const;
+  void reset();
 private:
   enum TokenType {
     BeginOfStream,
@@ -43,6 +45,8 @@ private:
   int64_t row_pos_;
 
   std::string doc_;
+  std::string err_;
+  bool good_;
 
   TokenType getNextToken();
   void ignoreBlank();

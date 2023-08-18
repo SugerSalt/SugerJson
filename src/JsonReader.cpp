@@ -12,6 +12,7 @@ JsonReader::JsonReader() : token_(BeginOfStream), pos_(nullptr), end_(nullptr), 
 }
 
 JsonValue JsonReader::parse(const std::string &document) {
+  reset();
   JsonValue json;
   doc_ = document;
   token_ = BeginOfStream;
@@ -22,6 +23,7 @@ JsonValue JsonReader::parse(const std::string &document) {
 }
 
 JsonValue JsonReader::parse(std::istream &in) {
+  reset();
   JsonValue json;
   doc_ = std::string(std::istreambuf_iterator<char>(in), {});
   token_ = BeginOfStream;
@@ -31,20 +33,49 @@ JsonValue JsonReader::parse(std::istream &in) {
   return json;
 }
 
-bool JsonReader::parse(const std::string &document, JsonValue &json) {
+bool JsonReader::parse(const std::string &document, JsonValue &json) noexcept {
+  reset();
   doc_ = document;
   token_ = BeginOfStream;
   pos_ = doc_.data();
   end_ = doc_.data() + doc_.size();
-  return readValue(json);
+  try {
+    readValue(json);
+  } catch (std::exception &e) {
+    good_ = false;
+    err_ = e.what();
+  }
+  return good_;
 }
 
-bool JsonReader::parse(std::istream &in, JsonValue &json) {
+bool JsonReader::parse(std::istream &in, JsonValue &json) noexcept {
+  reset();
   doc_ = std::string(std::istreambuf_iterator<char>(in), {});
   token_ = BeginOfStream;
   pos_ = doc_.data();
   end_ = doc_.data() + doc_.size();
-  return readValue(json);
+  try {
+    readValue(json);
+  } catch (std::exception &e) {
+    good_ = false;
+    err_ = e.what();
+  }
+  return good_;
+}
+
+bool JsonReader::good() const {
+  return good_;
+}
+
+const std::string &JsonReader::getErrorString() const {
+  return err_;
+}
+
+void JsonReader::reset() {
+  col_pos_ = 0;
+  row_pos_ = 0;
+  good_ = true;
+  err_.clear();
 }
 
 JsonReader::TokenType JsonReader::getNextToken() {
@@ -348,6 +379,7 @@ bool JsonReader::readNumber(JsonValue &json) {
   }
   if (negative) {
     double_result = -double_result;
+    long_result = -long_result;
   }
   if (is_int && long_result < INT32_MAX && long_result > INT32_MIN) {
     json = static_cast<int>(long_result);
@@ -427,7 +459,7 @@ std::string JsonReader::getString() {
 }
 
 std::istream &operator>>(std::istream &in, JsonValue &json) {
-  JsonReader().parse(in, json);
+  json = JsonReader().parse(in);
   return in;
 }
 } // suger

@@ -71,16 +71,22 @@ suger::JsonValue json;
 reader.parse(fin, json);  // 返回解析是否成功
 ```
 
-#### 解析异常
+#### 解析错误
 
-如果解析发生错误将产生`suger::parse_error`异常
+对于通过返回值获得json的解析，如果解析发生错误将产生`suger::parse_error`异常。否则通过额外函数判断解析错误。
 ```c++
+// 对于通过返回值获得json的方法或者 >> 流输入
 suger::JsonValue json;
 try {
-  json = reader.parse(jsonStr);
+  json = reader.parse(jsonStr);  // 这类方法遇到解析错误将直接产生异常
 } catch (suger::parse_error &e) {
   std::cout << e.what() << std::endl;
 }
+
+// 对于传参获取json的方法
+bool res = reader.parse(jsonStr, json);  // 这类方法可以直接通过返回值确定是否有解析错误
+reader.good();  // 通过该函数也可以判断是否有解析错误
+reader.getErrorString()  // 如果发生错误，通过该函数获得报错信息
 ```
 
 ### json使用
