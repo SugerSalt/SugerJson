@@ -18,7 +18,7 @@ if(NOT DEFINED CMAKE_BUILD_TYPE AND NOT DEFINED CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-find_program(CCACHE_EXECUTABLE "ccache" HINTS /usr/local/bin /opt/local/bin)
+find_program(CCACHE_EXECUTABLE ccache)
 if(CCACHE_EXECUTABLE)
     message(STATUS "use ccache")
     set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}" CACHE PATH "ccache" FORCE)
@@ -27,10 +27,10 @@ endif()
 
 # 设置项目
 project(SugerJson
-    VERSION 1.0.1
+    VERSION 1.1.0
     LANGUAGES CXX)
 message(STATUS "SugerJson Version: ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
-set(PROJECT_SOVERSION 1)
+set(PROJECT_SOVERSION 2)
 
 option(BUILD_EXAMPLE "Compile SugerJson example" OFF)
 option(BUILD_SHARED_LIBS "Build shared library." ON)
