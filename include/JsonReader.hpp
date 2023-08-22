@@ -39,14 +39,27 @@ private:
     Error
   };
   TokenType token_;
-  const char *pos_;
-  const char *end_;
+
+  struct Iterator{
+    enum {
+      StringIt,
+      StreamIt
+    }type_;
+    std::string::const_iterator string_it;
+    std::istreambuf_iterator<char> stream_it;
+    void operator++();
+    char operator*() const;
+    bool operator==(const Iterator& rhs) const;
+    bool operator!=(const Iterator& rhs) const;
+  };
+  Iterator pos_;
+  Iterator end_;
   int64_t col_pos_;
   int64_t row_pos_;
 
   std::string doc_;
   std::string err_;
-  bool good_;
+  bool good_{};
 
   TokenType getNextToken();
   void ignoreBlank();

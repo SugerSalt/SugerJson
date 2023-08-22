@@ -6,18 +6,20 @@
 
 namespace suger {
 
-JsonReader::JsonReader() : token_(BeginOfStream), pos_(nullptr), end_(nullptr), col_pos_(0),
-                           row_pos_(0) {
+JsonReader::JsonReader() : token_(BeginOfStream), col_pos_(0),
+                           row_pos_(0), good_(true) {
 
 }
 
 JsonValue JsonReader::parse(const std::string &document) {
   reset();
   JsonValue json;
-  doc_ = document;
+  // doc_ = document;
   token_ = BeginOfStream;
-  pos_ = doc_.data();
-  end_ = doc_.data() + doc_.size();
+  pos_.type_ = Iterator::StringIt;
+  pos_.string_it = document.begin();
+  end_.type_ = Iterator::StringIt;
+  end_.string_it = document.end();
   readValue(json);
   return json;
 }
@@ -25,20 +27,24 @@ JsonValue JsonReader::parse(const std::string &document) {
 JsonValue JsonReader::parse(std::istream &in) {
   reset();
   JsonValue json;
-  doc_ = std::string(std::istreambuf_iterator<char>(in), {});
+  // doc_ = std::string(std::istreambuf_iterator<char>(in), {});
   token_ = BeginOfStream;
-  pos_ = doc_.data();
-  end_ = doc_.data() + doc_.size();
+  pos_.type_ = Iterator::StreamIt;
+  pos_.stream_it = std::istreambuf_iterator<char>(in);
+  end_.type_ = Iterator::StreamIt;
+  end_.stream_it = std::istreambuf_iterator<char>();
   readValue(json);
   return json;
 }
 
 bool JsonReader::parse(const std::string &document, JsonValue &json) noexcept {
   reset();
-  doc_ = document;
+  // doc_ = document;
   token_ = BeginOfStream;
-  pos_ = doc_.data();
-  end_ = doc_.data() + doc_.size();
+  pos_.type_ = Iterator::StringIt;
+  pos_.string_it = document.begin();
+  end_.type_ = Iterator::StringIt;
+  end_.string_it = document.end();
   try {
     readValue(json);
   } catch (std::exception &e) {
@@ -50,10 +56,12 @@ bool JsonReader::parse(const std::string &document, JsonValue &json) noexcept {
 
 bool JsonReader::parse(std::istream &in, JsonValue &json) noexcept {
   reset();
-  doc_ = std::string(std::istreambuf_iterator<char>(in), {});
+  // doc_ = std::string(std::istreambuf_iterator<char>(in), {});
   token_ = BeginOfStream;
-  pos_ = doc_.data();
-  end_ = doc_.data() + doc_.size();
+  pos_.type_ = Iterator::StreamIt;
+  pos_.stream_it = std::istreambuf_iterator<char>(in);
+  end_.type_ = Iterator::StreamIt;
+  end_.stream_it = std::istreambuf_iterator<char>();
   try {
     readValue(json);
   } catch (std::exception &e) {
@@ -108,33 +116,28 @@ JsonReader::TokenType JsonReader::getNextToken() {
       getNextToken();
       break;
     case 't':
-      if (strMatch("true", 4)) {
-        pos_ += 3;
-        col_pos_ += 3;
+      if (strMatch("rue", 3)) {
         token_ = True;
       } else {
         token_ = Error;
       }
       break;
     case 'f':
-      if (strMatch("false", 5)) {
-        pos_ += 4;
-        col_pos_ += 4;
+      if (strMatch("alse", 4)) {
         token_ = False;
       } else {
         token_ = Error;
       }
       break;
     case 'n':
-      if (strMatch("null", 4)) {
-        pos_ += 3;
-        col_pos_ += 3;
+      if (strMatch("ull", 3)) {
         token_ = Null;
       } else {
         token_ = Error;
       }
       break;
     case '\0':
+    case -1:
       token_ = EndOfStream;
       break;
     case '0':
@@ -212,7 +215,7 @@ void JsonReader::ignoreComment() {
         ++col_pos_;
       }
     }
-    if (pos_==end_){
+    if (pos_ == end_) {
       col_pos_ = col_s;
       row_pos_ = row_s;
       throwParseError("Syntax error: Incomplete block comment.");
@@ -323,7 +326,7 @@ bool JsonReader::readString(JsonValue &json) {
 }
 
 bool JsonReader::readNumber(JsonValue &json) {
-  size_t i = 0;
+  // size_t i = 0;
   bool negative = false;
   bool is_int = true;
   double double_result = 0.0;
@@ -331,41 +334,50 @@ bool JsonReader::readNumber(JsonValue &json) {
 
   auto isDigit = [](char ch) { return ch >= '0' && ch <= '9'; };
 
-  if (pos_[i] == '-') {
+  if (*pos_ == '-') {
     negative = true;
-    ++i;
-  } else if (pos_[i] == '+') {
-    ++i;
+    ++pos_;
+    ++col_pos_;
+  } else if (*pos_ == '+') {
+    ++pos_;
+    ++col_pos_;
   }
-  while (pos_ + i < end_ && isDigit(pos_[i])) {
-    double_result = double_result * 10 + (pos_[i] - '0');
-    long_result = long_result * 10 + (pos_[i] - '0');
-    ++i;
+  while (pos_ != end_ && isDigit(*pos_)) {
+    double_result = double_result * 10 + (*pos_ - '0');
+    long_result = long_result * 10 + (*pos_ - '0');
+    ++pos_;
+    ++col_pos_;
   }
-  if (pos_ + i < end_ && pos_[i] == '.') {
+  if (pos_ != end_ && *pos_ == '.') {
     is_int = false;
     double fraction = 0.1;
-    ++i;
-    while (pos_ + i < end_ && isDigit(pos_[i])) {
-      double_result = double_result + (pos_[i] - '0') * fraction;
+    ++pos_;
+    ++col_pos_;
+    while (pos_ != end_ && isDigit(*pos_)) {
+      double_result = double_result + (*pos_ - '0') * fraction;
       fraction *= 0.1;
-      ++i;
+      ++pos_;
+      ++col_pos_;
     }
   }
-  if (pos_ + i < end_ && (pos_[i] == 'e' || pos_[i] == 'E')) {
+  if (pos_ != end_ && (*pos_ == 'e' || *pos_ == 'E')) {
     is_int = false;
-    ++i;
+    ++pos_;
+    ++col_pos_;
     bool exponentNegative = false;
-    if (pos_[i] == '-') {
+    if (*pos_ == '-') {
       exponentNegative = true;
-      ++i;
-    } else if (pos_[i] == '+') {
-      ++i;
+      ++pos_;
+      ++col_pos_;
+    } else if (*pos_ == '+') {
+      ++pos_;
+      ++col_pos_;
     }
     int exponent = 0;
-    while (pos_ + i < end_ && isDigit(pos_[i])) {
-      exponent = exponent * 10 + (pos_[i] - '0');
-      ++i;
+    while (pos_ != end_ && isDigit(*pos_)) {
+      exponent = exponent * 10 + (*pos_ - '0');
+      ++pos_;
+      ++col_pos_;
     }
     double power = 1.0;
     for (int j = 0; j < exponent; j++) {
@@ -388,19 +400,17 @@ bool JsonReader::readNumber(JsonValue &json) {
   } else {
     json = double_result;
   }
-  pos_ += i;
-  col_pos_ += i;
   return true;
 }
 
 bool JsonReader::strMatch(const char *pattern, int len) {
-  if (end_ - pos_ < len) {
-    return false;
-  }
-  for (int i = 0; i < len; ++i) {
-    if (pos_[i] != pattern[i]) {
+  while (len--) {
+    ++pos_;
+    ++col_pos_;
+    if (*pos_ != *pattern || pos_ == end_) {
       return false;
     }
+    ++pattern;
   }
   return true;
 }
@@ -415,15 +425,19 @@ void JsonReader::throwParseError(const char *msg) const {
 // get from " to "
 std::string JsonReader::getString() {
   std::string str;
-  const char *pos = pos_ + 1;
-  while (pos != end_) {
-    char ch = *pos;
+  auto col_begin = col_pos_;
+  ++pos_;
+  ++col_pos_;
+  while (pos_ != end_) {
+    char ch = *pos_;
     if (ch == '\"') {
-      ++pos;
+      ++pos_;
+      ++col_pos_;
       break;
     } else if (ch == '\\') {
-      ++pos;
-      ch = *pos;
+      ++pos_;
+      ++col_pos_;
+      ch = *pos_;
       switch (ch) {
         case 'b':
           str += '\b';
@@ -444,18 +458,50 @@ std::string JsonReader::getString() {
           str += ch;
       }
     } else if (ch == '\n') {
+      col_pos_ = col_begin;
       throwParseError("Syntax error: incomplete string.");
     } else {
       str += ch;
     }
-    ++pos;
+    ++pos_;
+    ++col_pos_;
   }
-  if (pos == end_) {
+  if (pos_ == end_) {
+    col_pos_ = col_begin;
     throwParseError("Syntax error: incomplete string.");
   }
-  col_pos_ += pos - pos_;
-  pos_ = pos;
   return str;
+}
+
+void JsonReader::Iterator::operator++() {
+  if (type_ == StringIt) {
+    ++string_it;
+  } else {
+    ++stream_it;
+  }
+}
+
+char JsonReader::Iterator::operator*() const {
+  if (type_ == StringIt) {
+    return *string_it;
+  } else {
+    return *stream_it;
+  }
+}
+
+bool JsonReader::Iterator::operator==(const JsonReader::Iterator &rhs) const {
+  if (type_ != rhs.type_) {
+    return false;
+  }
+  if (type_ == StringIt) {
+    return string_it == rhs.string_it;
+  } else {
+    return stream_it == rhs.stream_it;
+  }
+}
+
+bool JsonReader::Iterator::operator!=(const JsonReader::Iterator &rhs) const {
+  return !(*this == rhs);
 }
 
 std::istream &operator>>(std::istream &in, JsonValue &json) {
